@@ -90,6 +90,7 @@ When deploying the Instana agent on OpenShift cluster running on IBM Z or LinuxO
     In this YAML file, it is assumed that the Instana nodes are labelled with name `node-role.kubernetes.io/monitor` and  are tainted with name `node-role.kubernetes.io/monitor`
   
 3. **Install Agent**
+   
    Get the instana agent installation command from instana UI and apply the `agent_values.yaml` file, An example would look like this. 
 
    ```bash

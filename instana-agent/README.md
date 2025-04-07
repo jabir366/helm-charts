@@ -56,7 +56,8 @@ When deploying the Instana agent on OpenShift cluster running on IBM Z or LinuxO
 2. **Define Two Zones:**  
    - Instana nodes should be configured in **`INFRASTRUCTURE`** mode.  
    - Application workload nodes should be configured in **`APM`** mode.  
-   - Create a YAML file speifying the zones along with their affinity and tolerations
+   - Create a YAML file speifying the zones along with their affinity and tolerations.
+     It is assumed that the Instana nodes are tainted with `node.instana.io/monitor=true` and labelled with `node-role.kubernetes.io/monitor=true`
     
     ```yaml
     zones:

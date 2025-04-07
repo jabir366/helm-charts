@@ -60,31 +60,31 @@ When deploying the Instana agent on OpenShift cluster running on IBM Z or LinuxO
     
     ```yaml
     zones:
-    - name: workloads
-      mode: APM
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: workload
-                    operator: Exists
-    - name: instana-nodes
-      mode: INFRASTRUCTURE
-      tolerations:
-        - key: node-role.kubernetes.io/monitor
-          operator: Equal
-          effect: NoSchedule
-          value: "true"
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: node-role.kubernetes.io/monitor
-                    operator: In
-                    values:
-                    - "true"
+      - name: workloads
+        mode: APM
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: workload
+                      operator: Exists
+      - name: instana-nodes
+        mode: INFRASTRUCTURE
+        tolerations:
+          - key: node.instana.io/monitor
+            operator: Equal
+            effect: NoSchedule
+            value: "true"
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: node-role.kubernetes.io/monitor
+                      operator: In
+                      values:
+                      - "true"
     ```
     In this YAML file, it is assumed that the Instana nodes are labelled with name `node-role.kubernetes.io/monitor` and  are tainted with name `node-role.kubernetes.io/monitor`
   

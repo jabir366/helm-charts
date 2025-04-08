@@ -39,10 +39,21 @@ $ helm install instana-agent \
 instana-agent
 ```
 
-### Steps to Configure Instana  on IBM Z
+### Installing Instana Agents on OpenShift with Application and Monitoring Workloads
 
 
-When deploying the Instana agent on OpenShift cluster running on IBM Z or LinuxONE, Configuring distinct zones during installation is crucial. This separation is necessary because both the Instana and the application workloads it monitors reside within the same cluster.
+In some environments, both Instana monitoring components and application workloads are deployed on the same Red Hat OpenShift cluster. In these cases, it's important to ensure that Instana components are correctly tainted and labeled, and that the application nodes are labeled appropriately before installing the Instana agent.
+
+Let’s assume the label used is `node-role.kubernetes.io/monitor=true`. To verify that the Instana nodes are labelled correctly, run the following command:
+  ```bash 
+  kubectl get nodes -l node-role.kubernetes.io/monitor=true
+  ```
+
+To verify that the Instana nodes are tainted as expected, let's assume the taint used is node.instana.io/monitor=true. You can run the following command to check:
+
+  ```bash
+  kubectl get nodes -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .spec.taints[*]}{.key}{"="}{.value}{"\t"}{end}{"\n"}{end}' | grep monitor
+  ``` 
 
 1. **Label Application Workload Nodes:**  
    - Ensure that the nodes running application workloads are appropriately labeled to differentiate them from infrastructure nodes.  
@@ -57,7 +68,6 @@ When deploying the Instana agent on OpenShift cluster running on IBM Z or LinuxO
    - Instana nodes should be configured in **`INFRASTRUCTURE`** mode.  
    - Application workload nodes should be configured in **`APM`** mode.  
    - Create a YAML file speifying the zones along with their affinity and tolerations.
-     It is assumed that the Instana nodes are tainted with `node.instana.io/monitor=true` and labelled with `node-role.kubernetes.io/monitor=true`
     
     ```yaml
     zones:

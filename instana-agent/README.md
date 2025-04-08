@@ -39,6 +39,87 @@ $ helm install instana-agent \
 instana-agent
 ```
 
+### Installing Instana Agents on OpenShift with Application and Monitoring Workloads
+
+
+In some environments, both Instana monitoring components and application workloads are deployed on the same Red Hat OpenShift cluster. In these cases, it's important to ensure that Instana components are correctly tainted and labeled, and that the application nodes are labeled appropriately before installing the Instana agent.
+
+Let’s assume the label used is `node-role.kubernetes.io/monitor=true`. To verify that the Instana nodes are labelled correctly, run the following command:
+  ```bash 
+  kubectl get nodes -l node-role.kubernetes.io/monitor=true
+  ```
+
+To verify that the Instana nodes are tainted as expected, let's assume the taint used is node.instana.io/monitor=true. You can run the following command to check:
+
+  ```bash
+  kubectl get nodes -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .spec.taints[*]}{.key}{"="}{.value}{"\t"}{end}{"\n"}{end}' | grep monitor
+  ``` 
+
+1. **Label Application Workload Nodes:**  
+   - Ensure that the nodes running application workloads are appropriately labeled to differentiate them from infrastructure nodes.  
+
+      ```bash
+      NODE=<your node name>
+      CLUSTER=<your cluster name>
+      oc label node worker${NODE}.${CLUSTER_NAME} workload="true"
+      ``` 
+
+2. **Define Two Zones:**  
+   - Instana nodes should be configured in **`INFRASTRUCTURE`** mode.  
+   - Application workload nodes should be configured in **`APM`** mode.  
+   - Create a YAML file speifying the zones along with their affinity and tolerations.
+    
+    ```yaml
+    zones:
+      - name: workloads
+        mode: APM
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: workload
+                      operator: Exists
+      - name: instana-nodes
+        mode: INFRASTRUCTURE
+        tolerations:
+          - key: node.instana.io/monitor
+            operator: Equal
+            effect: NoSchedule
+            value: "true"
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: node-role.kubernetes.io/monitor
+                      operator: In
+                      values:
+                      - "true"
+    ```
+    In this YAML file, it is assumed that the Instana nodes are labelled with name `node-role.kubernetes.io/monitor` and  are tainted with name `node-role.kubernetes.io/monitor`
+  
+3. **Install Agent**
+   
+   Get the instana agent installation command from instana UI and apply the `agent_values.yaml` file, An example would look like this. 
+
+   ```bash
+   helm install instana-agent \
+   --repo https://agents.instana.io/helm \
+   --namespace instana-agent \
+   --create-namespace \
+   --set openshift=true \
+   --set agent.key=<AGENT_KEY> \
+   --set agent.downloadKey=<DOWNLOAD_KEY> \
+   --set agent.endpointHost=ingress.${CLUSTER_NAME} \
+   --set agent.endpointPort=443 \
+   --set cluster.name='<your cluster name>' \
+   instana-agent -f agent_values.yaml
+   ```
+
+
+By following these configurations, you can ensure seamless monitoring of your OpenShift workloads with Instana.  
+
 ## Upgrade
 
 The helm chart deploys a Kubernetes Operator internally that reconciles the agent resources based on an agent CustomResource (CR) that is created based on the helm values. As the Operator pattern requires a CustomResourceDefinition (CRD) to be present in the cluster before defining any CRs, the CRD definition is included in the helm chart. On initial installations the chart deploys the CRD before submitting the rest of the artifacts.
